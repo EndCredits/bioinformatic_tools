@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primer Evaluation</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        header { text-align: center; margin-bottom: 2rem; }
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-muted); }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .button-group { display: flex; gap: 1rem; margin-top: 1rem; }
+
+        .result-card { display: none; }
+        .result-card.show { display: block; }
+        .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .cached-badge { background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .section { margin-bottom: 1.5rem; }
+        .section-title { font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; }
+        .primer-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .info-item { padding: 0.75rem; background: var(--bg); border-radius: 8px; }
+        .info-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .info-value { font-size: 0.875rem; font-weight: 500; }
+        .info-value.sequence { font-family: 'Courier New', monospace; word-break: break-all; }
+
+        .warnings { margin-top: 1rem; }
+        .warning-item { padding: 0.75rem; background: #fef3c7; border-left: 4px solid var(--warning); border-radius: 0 8px 8px 0; margin-bottom: 0.5rem; font-size: 0.875rem; }
+        .pass-badge { background: #dcfce7; color: #166534; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; }
+        .fail-badge { background: #fee2e2; color: #991b1b; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; }
+
+        .loading { display: flex; align-items: center; justify-content: center; padding: 2rem; color: var(--text-muted); }
+        .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.75rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error { padding: 1rem; background: #fee2e2; border-left: 4px solid var(--error); border-radius: 0 8px 8px 0; color: #991b1b; }
+
+        .matches-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .matches-table th, .matches-table td { padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .matches-table th { font-weight: 500; color: var(--text-muted); }
+
+        footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.875rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Primer Evaluation</h1>
+            <p class="subtitle">Analyze primer pair specificity and properties</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="analysis-form">
+                    <div class="form-group">
+                        <label for="forward">Forward Primer (5' → 3')</label>
+                        <input type="text" id="forward" name="forward" placeholder="e.g., ATGCCCTGAGCTAAAGCTG" required>
+                        <p class="hint">15-60 bp, only A, T, G, C bases</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="reverse">Reverse Primer (5' → 3')</label>
+                        <input type="text" id="reverse" name="reverse" placeholder="e.g., TCACCGAGACAAAGCTCAC" required>
+                        <p class="hint">15-60 bp, only A, T, G, C bases</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="template">Template Sequence (optional)</label>
+                        <textarea id="template" name="template" placeholder="Enter template DNA sequence for specificity analysis..."></textarea>
+                        <p class="hint">Leave empty for basic analysis. Max 100,000 bp.</p>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">Analyze Primers</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="result-container" class="result-card"></div>
+        </main>
+
+        <footer><p>Primer Evaluation Web Service — Based on Primer3-Py</p></footer>
+    </div>
+
+    <script>
+        let pollInterval = null;
+        let currentTaskId = null;
+
+        function resetForm() {
+            document.getElementById('analysis-form').reset();
+            const c = document.getElementById('result-container');
+            c.innerHTML = '';
+            c.classList.remove('show');
+            stopPolling();
+        }
+
+        function stopPolling() {
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+            currentTaskId = null;
+        }
+
+        function startPolling(taskId) {
+            stopPolling();
+            currentTaskId = taskId;
+            pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/v1/result/${taskId}`);
+                    const data = await response.json();
+                    if (data.status === 'completed') { stopPolling(); displayResult(data.result, data.cached); }
+                    else if (data.status === 'failed') { stopPolling(); displayError(data.error || 'Analysis failed'); }
+                } catch (e) { console.error('Polling error:', e); }
+            }, 1000);
+        }
+
+        function displayResult(result, cached = false) {
+            const container = document.getElementById('result-container');
+            container.classList.add('show');
+            const passed = result.passed;
+            const statusClass = passed ? 'pass-badge' : 'fail-badge';
+            const statusText = passed ? 'PASSED' : 'ISSUES DETECTED';
+
+            let html = `
+                <div class="card result-card show">
+                    <div class="result-header">
+                        <span class="${statusClass}">${statusText}</span>
+                        ${cached ? '<span class="cached-badge">From Cache</span>' : ''}
+                    </div>
+                    <div class="section">
+                        <div class="section-title">Forward Primer</div>
+                        <div class="primer-info">
+                            <div class="info-item"><div class="info-label">Sequence</div><div class="info-value sequence">5'-${result.forward.sequence}-3'</div></div>
+                            <div class="info-item"><div class="info-label">Length</div><div class="info-value">${result.forward.length} bp</div></div>
+                            <div class="info-item"><div class="info-label">GC Content</div><div class="info-value">${result.forward.gc_content}%</div></div>
+                            <div class="info-item"><div class="info-label">Tm</div><div class="info-value">${result.forward.tm} °C</div></div>
+                            <div class="info-item"><div class="info-label">Hairpin ΔG</div><div class="info-value">${result.forward.hairpin_dg} kcal/mol</div></div>
+                            <div class="info-item"><div class="info-label">Homodimer ΔG</div><div class="info-value">${result.forward.homodimer_dg} kcal/mol</div></div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">Reverse Primer</div>
+                        <div class="primer-info">
+                            <div class="info-item"><div class="info-label">Sequence</div><div class="info-value sequence">5'-${result.reverse.sequence}-3'</div></div>
+                            <div class="info-item"><div class="info-label">Length</div><div class="info-value">${result.reverse.length} bp</div></div>
+                            <div class="info-item"><div class="info-label">GC Content</div><div class="info-value">${result.reverse.gc_content}%</div></div>
+                            <div class="info-item"><div class="info-label">Tm</div><div class="info-value">${result.reverse.tm} °C</div></div>
+                            <div class="info-item"><div class="info-label">Hairpin ΔG</div><div class="info-value">${result.reverse.hairpin_dg} kcal/mol</div></div>
+                            <div class="info-item"><div class="info-label">Homodimer ΔG</div><div class="info-value">${result.reverse.homodimer_dg} kcal/mol</div></div>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">Primer Pair</div>
+                        <div class="primer-info">
+                            <div class="info-item"><div class="info-label">Tm Difference</div><div class="info-value">${result.pair.tm_difference} °C</div></div>
+                            <div class="info-item"><div class="info-label">Heterodimer ΔG</div><div class="info-value">${result.pair.heterodimer_dg} kcal/mol</div></div>
+                        </div>
+                    </div>`;
+
+            if (result.specificity) {
+                const spec = result.specificity;
+                html += `<div class="section"><div class="section-title">Specificity Analysis</div><div class="primer-info">
+                    <div class="info-item"><div class="info-label">Forward Binding Sites</div><div class="info-value">${spec.forward_matches.length}</div></div>
+                    <div class="info-item"><div class="info-label">Reverse Binding Sites</div><div class="info-value">${spec.reverse_matches.length}</div></div>
+                    <div class="info-item"><div class="info-label">Potential Products</div><div class="info-value">${spec.potential_products.length}</div></div>
+                </div>`;
+                if (spec.potential_products.length > 0) {
+                    html += `<table class="matches-table" style="margin-top:1rem;"><tr><th>Product</th><th>Length</th><th>Position</th></tr>`;
+                    spec.potential_products.forEach((p, i) => { html += `<tr><td>Product ${i+1}</td><td>${p.length} bp</td><td>${p.fw_start}-${p.rv_start}</td></tr>`; });
+                    html += `</table>`;
+                }
+                html += `</div>`;
+            }
+
+            if (result.warnings && result.warnings.length > 0) {
+                html += `<div class="warnings"><div class="section-title">Warnings</div>`;
+                result.warnings.forEach(w => { html += `<div class="warning-item">${w}</div>`; });
+                html += `</div>`;
+            }
+
+            html += `<div class="button-group" style="margin-top:1.5rem;"><button class="btn btn-secondary" onclick="recalculate()">Recalculate</button></div></div>`;
+            container.innerHTML = html;
+        }
+
+        function displayError(error) {
+            const container = document.getElementById('result-container');
+            container.classList.add('show');
+            container.innerHTML = `<div class="card"><div class="error"><strong>Error:</strong> ${error}</div></div>`;
+        }
+
+        function displayLoading() {
+            const container = document.getElementById('result-container');
+            container.classList.add('show');
+            container.innerHTML = `<div class="card"><div class="loading"><div class="spinner"></div><span>Analyzing primers...</span></div></div>`;
+        }
+
+        async function recalculate() {
+            const forward = document.getElementById('forward').value;
+            const reverse = document.getElementById('reverse').value;
+            const template = document.getElementById('template').value;
+            if (!forward || !reverse) { alert('Please enter both primers'); return; }
+            displayLoading();
+            try {
+                const response = await fetch('/api/v1/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({forward, reverse, template}) });
+                const data = await response.json();
+                startPolling(data.task_id);
+            } catch (e) { displayError('Failed: ' + e.message); }
+        }
+
+        document.getElementById('analysis-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const forward = formData.get('forward');
+            const reverse = formData.get('reverse');
+            const template = formData.get('template');
+            displayLoading();
+            try {
+                const response = await fetch('/api/v1/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({forward, reverse, template}) });
+                const data = await response.json();
+                startPolling(data.task_id);
+            } catch (e) { displayError('Failed: ' + e.message); }
+        });
+    </script>
+</body>
+</html>
