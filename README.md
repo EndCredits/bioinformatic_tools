@@ -55,8 +55,10 @@ uvicorn web.main:app --reload
 ### Docker
 
 ```shell
-docker-compose up --build
+docker compose up -d --build
 ```
+
+By default, container exposes 5972 port to the host. A reverse proxy server is expected to run this service to public web.
 
 ## Project Structure
 
