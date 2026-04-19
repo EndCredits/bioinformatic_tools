@@ -912,7 +912,7 @@ export_results <- function(processed_data, aggregated_data, viz_data,
   message("Saved PDF visualization to: ", pdf_file)
 
   png_file <- paste0(output_prefix, ".png")
-  ggsave(png_file, plot = p, width = plot_width, height = plot_height, dpi = 300, device = "png")
+  ggsave(png_file, plot = p, width = plot_width, height = plot_height, dpi = 300, device = grDevices::png, type = "cairo")
   message("Saved PNG visualization to: ", png_file)
 
   out <- list(coordinates = coords_file, summary = summary_file, pdf = pdf_file, png = png_file)
