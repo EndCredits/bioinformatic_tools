@@ -66,8 +66,7 @@ MAX_LANES <- 16L
 
 default_config <- function() {
   list(
-    exclude_motifs = c("Unnamed__1", "Unnamed__4", "Unnamed__6",
-                       "TATA-box", "AT~TATA-box", "TATA", "CAAT-box"),
+    exclude_motifs = c(),
     remove_singletons = TRUE,
     significance = list(high = 1e-8, medium = 1e-7, low = 1e-6),
     enriched_min_count = 3,
