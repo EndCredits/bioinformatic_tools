@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TFBS Visualization Service</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <!-- Header -->
+    <header class="text-center mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">TFBS Visualization Service</h1>
+      <p class="text-gray-500 mt-1 text-sm sm:text-base">PlantRegMap TFBS &amp; PlantCARE Cis-Element Visualization</p>
+    </header>
+
+    <!-- Mode Selector -->
+    <div class="flex justify-center mb-5 sm:mb-6">
+      <div class="inline-flex rounded-lg border border-gray-200 overflow-hidden w-full sm:w-auto">
+        <button id="mode-tfbs" onclick="setMode('tfbs')"
+                class="mode-tab flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-sm font-medium bg-blue-600 text-white">
+          TFBS Prediction
+        </button>
+        <button id="mode-plantcare" onclick="setMode('plantcare')"
+                class="mode-tab flex-1 sm:flex-none px-4 sm:px-6 py-2.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50">
+          PlantCARE
+        </button>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-5 sm:mb-6">
+      <!-- File Upload Section -->
+      <div class="space-y-4">
+        <!-- TFBS files -->
+        <div id="tfbs-files">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Promoter FASTA Sequence File (FA/FASTA) (eg. sequence.fa) <span class="text-red-500">*</span></label>
+            <input type="file" id="fasta-file" accept=".fa,.fasta,.fa,.txt"
+                   class="file-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Prediction Results (TXT/TSV/CSV) (eg. fimo.txt) <span class="text-red-500">*</span></label>
+            <input type="file" id="prediction-file" accept=".txt,.tsv,.csv"
+                   class="file-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          </div>
+        </div>
+
+        <!-- PlantCARE files -->
+        <div id="plantcare-files" class="hidden">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">PlantCARE Output File (eg. plantCARE_output_PlantCARE_16917.tab) <span class="text-red-500">*</span></label>
+            <input type="file" id="plantcare-file" accept=".tab,.txt"
+                   class="file-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">FASTA Sequence File (FA/FASTA) <span class="text-gray-400">(optional)</span></label>
+            <input type="file" id="fasta-file-plantcare" accept=".fa,.fasta,.fa,.txt"
+                   class="file-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+          </div>
+        </div>
+      </div>
+
+      <!-- Options Panel -->
+      <div class="mt-6 pt-4 border-t border-gray-100">
+        <h3 class="text-sm font-medium text-gray-700 mb-3">Options</h3>
+        <div class="space-y-3">
+          <!-- Single strand toggle -->
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" id="single-strand" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Single-strand view (merge +/- strands)</span>
+          </label>
+
+          <!-- P-value threshold (TFBS only) -->
+          <div id="pvalue-option">
+            <label class="block text-sm text-gray-700 mb-1">P-value Threshold</label>
+            <input type="text" id="pvalue-threshold" value="1e-5" placeholder="e.g. 1e-5"
+                   class="w-full sm:w-48 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Motif filter (PlantCARE only) -->
+          <div id="motif-filter-option" class="hidden">
+            <label class="block text-sm text-gray-700 mb-1">Motif Filter (comma-separated)</label>
+            <input type="text" id="motif-filter" placeholder="e.g. CAAT-box, TATA-box"
+                   class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="mt-6">
+        <button id="submit-btn" onclick="submitForm()"
+                class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+          Run Analysis
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+      <div class="spinner mx-auto mb-4"></div>
+      <p class="text-gray-600 font-medium">Running analysis...</p>
+      <p class="text-gray-400 text-sm mt-1">This may take a few seconds</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error-box" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+      <div class="flex items-start gap-3">
+        <span class="text-red-500 text-xl leading-none">&#10007;</span>
+        <div class="flex-1">
+          <p id="error-message" class="text-red-800 font-medium"></p>
+          <details id="error-details-wrap" class="mt-2">
+            <summary class="text-sm text-red-600 cursor-pointer hover:underline">Show details</summary>
+            <pre id="error-detail" class="mt-2 text-xs text-red-700 bg-red-100 rounded p-3 overflow-x-auto whitespace-pre-wrap"></pre>
+          </details>
+        </div>
+        <button onclick="dismissError()" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="result-box" class="hidden">
+      <!-- Expiry countdown -->
+      <div id="expiry-notice" class="hidden mb-4 px-4 py-3 rounded-lg border bg-amber-50 text-amber-700 border-amber-200 text-sm font-medium text-center">
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <!-- Image -->
+        <div class="p-4 bg-gray-50 border-b border-gray-200">
+          <img id="result-img" class="max-w-full mx-auto rounded" alt="Visualization result">
+        </div>
+
+        <!-- Summary -->
+        <div class="p-6 border-b border-gray-200">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">Summary</h3>
+          <div id="summary-content" class="text-sm text-gray-600"></div>
+        </div>
+
+        <!-- Downloads -->
+        <div class="p-6">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">Downloads</h3>
+          <div id="download-links" class="flex flex-col sm:flex-row flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <!-- New Analysis -->
+      <div class="text-center mt-4">
+        <button onclick="resetForm()"
+                class="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+          New Analysis
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

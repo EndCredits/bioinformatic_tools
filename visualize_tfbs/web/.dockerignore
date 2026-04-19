@@ -1,0 +1,7 @@
+.git/
+__pycache__/
+*.pyc
+*.png
+*.pdf
+*.csv
+*.json

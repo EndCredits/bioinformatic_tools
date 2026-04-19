@@ -1,0 +1,8 @@
+services:
+  tfbs-web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    ports:
+      - "6820:6820"
+    restart: unless-stopped

@@ -1,0 +1,24 @@
+/* Spinner animation */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* File input hover highlight */
+.file-input:focus + label,
+.file-input:hover {
+  /* Tailwind handles most styling; this is for drag-drop visual feedback */
+}
+
+/* Smooth transitions */
+.mode-tab {
+  transition: background-color 0.15s, color 0.15s;
+}
