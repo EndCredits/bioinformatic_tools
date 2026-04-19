@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  primer-eval:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5972:5972"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=sqlite:///./analysis_cache.db
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5972/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

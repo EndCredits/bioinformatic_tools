@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primer Evaluation</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #0ea5e9 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div class="max-w-3xl mx-auto px-4 py-6">
+
+        <!-- Header -->
+        <header class="gradient-header rounded-2xl p-6 mb-6 text-white shadow-lg">
+            <h1 class="text-2xl md:text-3xl font-bold mb-1">Primer Evaluation</h1>
+            <p class="text-blue-100 text-sm md:text-base">Analyze primer pair properties & specificity</p>
+        </header>
+
+        <!-- Form Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5 md:p-6 mb-6">
+            <form id="analysis-form" class="space-y-4">
+                <div>
+                    <label for="forward" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Forward Primer <span class="text-gray-400 font-normal">(5' → 3')</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="forward"
+                        name="forward"
+                        placeholder="ATGCCCTGAGCTAAAGCTG"
+                        required
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    >
+                    <p class="text-xs text-gray-400 mt-1">15–60 bp, A/T/G/C only</p>
+                </div>
+
+                <div>
+                    <label for="reverse" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Reverse Primer <span class="text-gray-400 font-normal">(5' → 3')</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="reverse"
+                        name="reverse"
+                        placeholder="TCACCGAGACAAAGCTCAC"
+                        required
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    >
+                    <p class="text-xs text-gray-400 mt-1">15–60 bp, A/T/G/C only</p>
+                </div>
+
+                <div>
+                    <label for="template" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Template Sequence <span class="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <textarea
+                        id="template"
+                        name="template"
+                        rows="3"
+                        placeholder="Enter DNA template for specificity analysis..."
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-xs resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    ></textarea>
+                    <p class="text-xs text-gray-400 mt-1">Max 100,000 bp. Leave empty for basic analysis only.</p>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button
+                        type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition shadow-sm"
+                    >
+                        Analyze Primers
+                    </button>
+                    <button
+                        type="button"
+                        onclick="resetForm()"
+                        class="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl transition"
+                    >
+                        Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Result Container -->
+        <div id="result-container"></div>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 text-gray-400 text-xs">
+            Based on <a href="https://github.com/libnano/primer3-py" class="hover:text-blue-500 transition">Primer3-Py</a>
+        </footer>
+    </div>
+
+    <!-- Dark mode toggle -->
+    <button
+        onclick="toggleDark()"
+        class="fixed top-4 right-4 w-10 h-10 rounded-full bg-white dark:bg-gray-700 shadow-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-105 transition"
+        title="Toggle dark mode"
+    >
+        <span id="theme-icon">🌙</span>
+    </button>
+
+    <script>
+        // Dark mode
+        function toggleDark() {
+            document.documentElement.classList.toggle('dark');
+            document.getElementById('theme-icon').textContent =
+                document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+        }
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').textContent = '☀️';
+        }
+
+        // State
+        let pollInterval = null;
+        let currentTaskId = null;
+
+        function stopPolling() {
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+            currentTaskId = null;
+        }
+
+        function resetForm() {
+            document.getElementById('analysis-form').reset();
+            const c = document.getElementById('result-container');
+            c.innerHTML = '';
+            stopPolling();
+        }
+
+        function startPolling(taskId) {
+            stopPolling();
+            currentTaskId = taskId;
+            pollInterval = setInterval(async () => {
+                try {
+                    const r = await fetch(`/api/v1/result/${taskId}`);
+                    const data = await r.json();
+                    if (data.status === 'completed') { stopPolling(); displayResult(data.result, data.cached); }
+                    else if (data.status === 'failed') { stopPolling(); displayError(data.error || 'Analysis failed'); }
+                } catch (e) { console.error('Polling error:', e); }
+            }, 800);
+        }
+
+        function resultBadge(passed) {
+            return passed
+                ? `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">PASSED</span>`
+                : `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">ISSUES DETECTED</span>`;
+        }
+
+        function infoCard(label, value, mono = false) {
+            return `<div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3">
+                <div class="text-xs text-gray-400 dark:text-gray-500 mb-0.5">${label}</div>
+                <div class="text-sm font-medium ${mono ? 'font-mono break-all' : ''} text-gray-900 dark:text-gray-100">${value}</div>
+            </div>`;
+        }
+
+        function displayResult(result, cached) {
+            const c = document.getElementById('result-container');
+            const passed = result.passed;
+
+            let html = `<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5 md:p-6 mb-6">
+                <div class="flex flex-wrap items-center gap-3 mb-5">
+                    ${resultBadge(passed)}
+                    ${cached ? '<span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">From Cache</span>' : ''}
+                </div>`;
+
+            // Forward & Reverse in 2-col grid on desktop
+            html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Forward Primer</h3>
+                    <div class="space-y-2">${infoCard('Sequence', `5'-${result.forward.sequence}-3'`, true)}
+                        ${infoCard('Length', result.forward.length + ' bp')}
+                        ${infoCard('GC%', result.forward.gc_content + '%')}
+                        ${infoCard('Tm', result.forward.tm + ' °C')}
+                        ${infoCard('Hairpin ΔG', result.forward.hairpin_dg + ' kcal/mol')}
+                        ${infoCard('Homodimer ΔG', result.forward.homodimer_dg + ' kcal/mol')}
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Reverse Primer</h3>
+                    <div class="space-y-2">${infoCard('Sequence', `5'-${result.reverse.sequence}-3'`, true)}
+                        ${infoCard('Length', result.reverse.length + ' bp')}
+                        ${infoCard('GC%', result.reverse.gc_content + '%')}
+                        ${infoCard('Tm', result.reverse.tm + ' °C')}
+                        ${infoCard('Hairpin ΔG', result.reverse.hairpin_dg + ' kcal/mol')}
+                        ${infoCard('Homodimer ΔG', result.reverse.homodimer_dg + ' kcal/mol')}
+                    </div>
+                </div>
+            </div>`;
+
+            // Pair info
+            html += `<div class="mb-5">
+                <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Primer Pair</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">${infoCard('Tm Diff', result.pair.tm_difference + ' °C')}
+                    ${infoCard('Heterodimer ΔG', result.pair.heterodimer_dg + ' kcal/mol')}
+                    ${infoCard('3\'-end Risk', result.pair.three_prime_risk ? '⚠️ Yes' : '✅ OK')}
+                    ${infoCard('Warnings', result.warnings.length)}
+                </div>
+            </div>`;
+
+            // Specificity
+            if (result.specificity) {
+                const spec = result.specificity;
+                html += `<div class="mb-5">
+                    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Specificity</h3>
+                    <div class="grid grid-cols-3 gap-2 mb-3">${infoCard('FW Sites', spec.forward_matches.length)}
+                        ${infoCard('RV Sites', spec.reverse_matches.length)}
+                        ${infoCard('Products', spec.potential_products.length)}
+                    </div>`;
+                if (spec.potential_products.length > 0) {
+                    html += `<div class="overflow-x-auto"><table class="w-full text-xs">
+                        <thead><tr class="text-left text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                            <th class="py-1.5 pr-4">#</th><th class="py-1.5 pr-4">Length</th><th class="py-1.5">Position</th>
+                        </tr></thead><tbody>`;
+                    spec.potential_products.forEach((p, i) => {
+                        html += `<tr class="border-b border-gray-100 dark:border-gray-700/50"><td class="py-1.5 pr-4 text-gray-400">${i+1}</td><td class="py-1.5 pr-4">${p.length} bp</td><td class="py-1.5">${p.fw_start}–${p.rv_start}</td></tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                }
+                html += `</div>`;
+            }
+
+            // Warnings
+            if (result.warnings && result.warnings.length > 0) {
+                html += `<div class="mb-5">
+                    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Warnings</h3>
+                    <div class="space-y-1.5">`;
+                result.warnings.forEach(w => {
+                    html += `<div class="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 rounded-r-lg px-3 py-2">
+                        <span>⚠️</span><span>${w}</span>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            html += `<button onclick="recalculate()" class="w-full mt-2 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl transition text-sm font-medium">
+                Recalculate
+            </button></div>`;
+
+            c.innerHTML = html;
+        }
+
+        function displayError(error) {
+            const c = document.getElementById('result-container');
+            c.innerHTML = `<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5 md:p-6 border-l-4 border-red-500">
+                <div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium mb-1">
+                    <span>❌</span> Error
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">${error}</p>
+            </div>`;
+        }
+
+        function displayLoading() {
+            const c = document.getElementById('result-container');
+            c.innerHTML = `<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center">
+                <div class="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Analyzing primers...</p>
+            </div>`;
+        }
+
+        async function recalculate() {
+            const f = document.getElementById('forward').value;
+            const r = document.getElementById('reverse').value;
+            const t = document.getElementById('template').value;
+            if (!f || !r) { alert('Please enter both primers'); return; }
+            displayLoading();
+            try {
+                const resp = await fetch('/api/v1/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({forward: f, reverse: r, template: t}) });
+                const data = await resp.json();
+                if (data.status === 'completed' || data.status === 'cached') {
+                    const r2 = await fetch(`/api/v1/result/${data.task_id}`);
+                    const d2 = await r2.json();
+                    if (d2.status === 'completed') { displayResult(d2.result, d2.cached); return; }
+                }
+                startPolling(data.task_id);
+            } catch (e) { displayError('Failed: ' + e.message); }
+        }
+
+        document.getElementById('analysis-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const f = document.getElementById('forward').value;
+            const r = document.getElementById('reverse').value;
+            const t = document.getElementById('template').value;
+            displayLoading();
+            try {
+                const resp = await fetch('/api/v1/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({forward: f, reverse: r, template: t}) });
+                const data = await resp.json();
+                if (data.status === 'completed' || data.status === 'cached') {
+                    const r2 = await fetch(`/api/v1/result/${data.task_id}`);
+                    const d2 = await r2.json();
+                    if (d2.status === 'completed') { displayResult(d2.result, d2.cached); return; }
+                }
+                startPolling(data.task_id);
+            } catch (e) { displayError('Failed: ' + e.message); }
+        });
+    </script>
+</body>
+</html>
