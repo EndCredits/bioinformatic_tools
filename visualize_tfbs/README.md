@@ -19,6 +19,12 @@ Lescot, M., Déhais, P., Thijs, G., Marchal, K., Moreau, Y., Van de Peer, Y., Ro
 
 ## 依赖
 
+### 使用 Nix 一键运行
+
+```bash
+$ nix develop .
+```
+
 **R 包**（必需）：
 
 ```r
