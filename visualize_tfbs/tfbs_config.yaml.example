@@ -1,0 +1,24 @@
+# PlantCARE TFBS Visualization Configuration
+# Override with --exclude on command line or --config <path>
+
+# Default motifs to exclude from PlantCARE visualization
+exclude_motifs:
+  - "Unnamed__1"
+  - "Unnamed__4"
+  - "Unnamed__6"
+  - "TATA-box"
+  - "AT~TATA-box"
+  - "TATA"
+  - "CAAT-box"
+
+# Remove motif families that appear only once
+remove_singletons: true
+
+# Significance thresholds for star markers
+significance:
+  high: 1e-8      # ***
+  medium: 1e-7    # **
+  low: 1e-6       # *
+
+# Minimum count to show "n=x" enriched region label
+enriched_min_count: 3
