@@ -8,8 +8,8 @@
 
 # 支持什么
 
-- 转录因子结合位点可视化: `./visualize_tfbs`
-- 评估引物质量: `./primer-evaluation`
+- 转录因子结合位点可视化: `./visualize_tfbs` , Demo: [vtfbs.endcredits.cc](https://vtfbs.endcredits.cc)
+- 评估引物质量: `./primer-evaluation` , Demo: [primer.endcredits.cc](https://primer.endcredits.cc)
 
 # 许可证
 
