@@ -9,6 +9,7 @@ Add `./bin` directory to your PATH. And configure tools in your workspace if nec
 # Now supports
 
 - Visualization of transcription factor binding sites: `./visualize_tfbs`
+- Evaluate primer quality: `./primer-evaluation`
 
 # Licence
 

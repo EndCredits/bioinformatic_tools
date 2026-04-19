@@ -9,6 +9,7 @@
 # 支持什么
 
 - 转录因子结合位点可视化: `./visualize_tfbs`
+- 评估引物质量: `./primer-evaluation`
 
 # 许可证
 
